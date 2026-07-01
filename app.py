@@ -5,80 +5,102 @@ from io import BytesIO
 from datetime import datetime
 import random
 
+# ======================
+# PAGE CONFIG
+# ======================
 st.set_page_config(
-    page_title="ProQuote – Angebotssoftware",
+    page_title="ProQuote AI",
     page_icon="🧾",
     layout="wide"
 )
 
-# ===== HERO SECTION =====
-st.markdown("""
-# 🧾 ProQuote
+# ======================
+# WARNING BANNER
+# ======================
+st.warning("""
+⚠️ TESTSYSTEM
 
-### Angebote in Sekunden erstellen – wie ein echtes Büro-Tool für Handwerker
+Diese Anwendung ist ein Test- und Demo-Tool.
+Bitte keine echten personenbezogenen Daten oder sensiblen Informationen eingeben.
 
+Alle Inhalte dienen nur zu Demonstrationszwecken.
 """)
 
-# ===== FEATURE BOXES =====
+# ======================
+# SESSION STATE
+# ======================
+if "angebote" not in st.session_state:
+    st.session_state.angebote = []
+
+# ======================
+# HEADER / UI
+# ======================
+st.markdown("""
+# 🧾 ProQuote AI
+
+### Angebote in Sekunden erstellen – einfach, schnell, professionell
+""")
+
 colA, colB, colC = st.columns(3)
 
 with colA:
     st.markdown("### ⚡ Schnell")
-    st.write("Erstelle komplette Angebote in unter 1 Minute.")
+    st.write("Angebote in unter 1 Minute erstellen.")
 
 with colB:
-    st.markdown("### 🧠 Smart")
-    st.write("Automatische Vorschläge für Gewerke & Preise.")
+    st.markdown("### 🧠 Einfach")
+    st.write("Kein kompliziertes Tool – direkt loslegen.")
 
 with colC:
-    st.markdown("### 📄 Export")
-    st.write("PDF Angebote direkt downloaden & verschicken.")
+    st.markdown("### 📄 PDF Export")
+    st.write("Sofort fertige Angebote als PDF downloaden.")
 
 st.divider()
 
-
-# ===== SESSION INIT =====
-if "angebote" not in st.session_state:
-    st.session_state.angebote = []
-
-# ===== GEWERKE =====
+# ======================
+# GEWERKE + PREISLOGIK
+# ======================
 gwerke = {
     "Maler": {
-        "text": "Wände streichen, Vorbereitung, Abdeckung, Reinigung",
+        "text": "Wände streichen, Abdeckung, Vorbereitung",
         "preis": (300, 1500)
     },
     "Elektriker": {
-        "text": "Steckdosen setzen, Leitungen prüfen, Installation",
+        "text": "Steckdosen, Leitungen, Installation",
         "preis": (500, 3000)
     },
     "Sanitär": {
-        "text": "Rohrarbeiten, Badinstallation, Reparaturen",
+        "text": "Rohrarbeiten, Badinstallation",
         "preis": (600, 3500)
     },
     "Gartenbau": {
-        "text": "Rasenarbeiten, Hecken schneiden, Pflasterarbeiten",
+        "text": "Rasen, Hecken, Außenarbeiten",
         "preis": (200, 2000)
     }
 }
 
-# ===== PDF =====
+# ======================
+# PDF GENERATOR
+# ======================
 def create_pdf(data):
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=A4)
 
     y = 800
 
-    pdf.setFont("Helvetica-Bold", 14)
-    pdf.drawString(50, y, data["firma"])
+    pdf.setFont("Helvetica-Bold", 16)
+    pdf.drawString(50, y, "ProQuote AI Angebot")
 
-    y -= 30
+    y -= 40
     pdf.setFont("Helvetica", 11)
-    pdf.drawString(50, y, f"Angebotsnummer: {data['nr']}")
+    pdf.drawString(50, y, f"Angebotsnr: {data['nr']}")
+
     y -= 20
     pdf.drawString(50, y, f"Datum: {data['datum']}")
 
-    y -= 40
+    y -= 30
     pdf.drawString(50, y, f"Kunde: {data['kunde']}")
+
     y -= 20
     pdf.drawString(50, y, f"Adresse: {data['adresse']}")
 
@@ -95,31 +117,34 @@ def create_pdf(data):
 
     y -= 30
     pdf.setFont("Helvetica-Bold", 12)
-    pdf.drawString(50, y, f"Preis: {data['preis']} €")
+    pdf.drawString(50, y, f"Gesamtpreis: {data['preis']} €")
 
     pdf.save()
     buffer.seek(0)
     return buffer
 
-
-# ===== UI =====
+# ======================
+# LAYOUT
+# ======================
 col1, col2 = st.columns(2)
 
+# ======================
+# INPUT
+# ======================
 with col1:
-    st.subheader("🧾 Eingabe")
+    st.subheader("🧾 Neues Angebot")
 
-    firma = st.text_input("Firma", "Muster GmbH")
+    firma = st.text_input("Firma", "Meine Firma GmbH")
     kunde = st.text_input("Kunde")
     adresse = st.text_input("Adresse")
 
     gewerk = st.selectbox("Gewerk", list(gwerke.keys()))
 
-    # 🔥 FIX: Preisrange funktioniert wieder sauber
     min_p, max_p = gwerke[gewerk]["preis"]
 
-    use_auto = st.checkbox("Preisvorschlag nutzen (Slider)")
+    use_slider = st.checkbox("Preisvorschlag nutzen")
 
-    if use_auto:
+    if use_slider:
         preis = st.slider(
             "Preis wählen",
             min_value=min_p,
@@ -128,7 +153,7 @@ with col1:
         )
     else:
         preis = st.number_input(
-            "Eigener Preis (€)",
+            "Eigener Preis",
             min_value=0,
             value=min_p
         )
@@ -157,16 +182,17 @@ with col1:
         st.session_state.angebote.append(neues_angebot)
         st.session_state["data"] = neues_angebot
 
-
-# ===== OUTPUT =====
+# ======================
+# OUTPUT
+# ======================
 with col2:
-    st.subheader("📄 Ergebnis")
+    st.subheader("📄 Vorschau")
 
     if "data" in st.session_state:
 
         d = st.session_state["data"]
 
-        st.success("✔ Angebot erstellt")
+        st.success("Angebot erstellt!")
 
         st.write(f"🏢 Firma: {d['firma']}")
         st.write(f"👤 Kunde: {d['kunde']}")
@@ -176,7 +202,7 @@ with col2:
         pdf = create_pdf(d)
 
         st.download_button(
-            label="📥 PDF herunterladen",
+            "📥 PDF herunterladen",
             data=pdf,
             file_name=f"angebot_{d['nr']}.pdf",
             mime="application/pdf"
@@ -185,8 +211,9 @@ with col2:
     else:
         st.info("Noch kein Angebot erstellt")
 
-
-# ===== HISTORIE =====
+# ======================
+# HISTORY
+# ======================
 st.divider()
 st.subheader("📚 Angebots-Historie")
 
